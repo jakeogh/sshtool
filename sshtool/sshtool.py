@@ -156,7 +156,7 @@ def generate_and_install_key(ctx,
                              debug: bool,
                              ):
 
-    if root_user:
+    if root_user():
         pause("\nAre you sure you want to do this as root?\n")
 
     ctx.ensure_object(dict)
