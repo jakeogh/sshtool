@@ -49,9 +49,10 @@ from asserttool import nevd
 from asserttool import pause
 from asserttool import root_user
 from enumerate_input import enumerate_input
+from replace_text import append_unique_bytes_to_file
 #from pathtool import path_is_block_special
 #from getdents import files
-from pathtool import write_line_to_file
+#from pathtool import write_line_to_file
 from retry_on_exception import retry_on_exception
 
 
@@ -88,10 +89,14 @@ def add_host_to_ssh_config(hostname: str,
                            debug: bool,
                            ):
 
-    line = "\n\nHost {hostname}\n\tPubkeyAuthentication yes\n\tUser {user}\n\tIdentityFile ~/.ssh/id_rsa__%r@%h\n".format(hostname=hostname, user=user,)
+    config_section = "\n\nHost {hostname}\n\tPubkeyAuthentication yes\n\tUser {user}\n\tIdentityFile ~/.ssh/id_rsa__%r@%h\n".format(hostname=hostname, user=user,)
     if verbose:
-        ic(hostname, user, line)
-    write_line_to_file(path='~/.ssh/config', unique=True, line=line, verbose=verbose, debug=debug,)
+        ic(hostname, user, config_section)
+    #write_line_to_file(path='~/.ssh/config', unique=True, line=line, verbose=verbose, debug=debug,)
+    append_unique_bytes_to_file(path='~/.ssh/config',
+                                bytes_to_append=config_section.encode('utf8'),
+                                verbose=verbose,
+                                debug=debug,)
 
 
 def generate_ssh_key_files(user: str,
