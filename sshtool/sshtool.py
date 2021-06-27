@@ -119,6 +119,7 @@ def generate_ssh_key_files(user: str,
 
     keygen_command.bake('-N', password)
 
+    eprint('\nGenerating {key_size}bit RSA key'.format(key_size=key_size))
     keygen_command()
 
     assert id_rsa_file.exists()
