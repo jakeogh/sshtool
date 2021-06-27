@@ -88,7 +88,7 @@ def add_host_to_ssh_config(hostname: str,
                            debug: bool,
                            ):
 
-    line = "\n\nHost {hostname}\n\tPubkeyAuthentication yes\n\tUser {user}\n\tIdentityFile ~/.ssh/id_rsa__%r@%h".format(hostname=hostname, user=user,)
+    line = "\n\nHost {hostname}\n\tPubkeyAuthentication yes\n\tUser {user}\n\tIdentityFile ~/.ssh/id_rsa__%r@%h\n".format(hostname=hostname, user=user,)
     if verbose:
         ic(hostname, user, line)
     write_line_to_file(path='~/.ssh/config', unique=True, line=line, verbose=verbose, debug=debug,)
