@@ -33,6 +33,7 @@ import click
 import sh
 
 signal(SIGPIPE, SIG_DFL)
+from getpass import getpass
 from pathlib import Path
 from typing import ByteString
 from typing import Generator
@@ -96,6 +97,7 @@ def add_host_to_ssh_config(hostname: str,
 def generate_ssh_key_files(user: str,
                            hostname: str,
                            key_size: int,
+                           no_password: bool,
                            exist_ok: bool,
                            verbose: bool,
                            debug: bool,
@@ -109,7 +111,16 @@ def generate_ssh_key_files(user: str,
         eprint(id_rsa_file.as_posix(), 'exists, skiping key generation')
         return id_rsa_file
 
-    sh.ssh_keygen('-vvv', '-t', 'rsa', '-b', key_size, '-N', '', '-f', id_rsa_file.as_posix())
+    keygen_command = sh.ssh_keygen.bake('-vvv', '-t', 'rsa', '-b', key_size, '-C', '', '-f', id_rsa_file.as_posix())
+    if not no_password:     # using a password
+        password = getpass('Enter passphrase (empty for no passphrase): ')
+    else:
+        password = ''
+
+    keygen_command.bake('-N', password)
+
+    keygen_command()
+
     assert id_rsa_file.exists()
     return id_rsa_file
 
@@ -132,12 +143,14 @@ def cli(ctx,
 @click.argument("user", type=str, nargs=1)
 @click.argument("hostname", type=str, nargs=1)
 @click.option('--key-size', type=int, default=16384,)
+@click.option('--no-password', is_flag=True)
 @click.option('--verbose', is_flag=True)
 @click.option('--debug', is_flag=True)
 @click.pass_context
 def generate_and_install_key(ctx,
                              user: str,
                              key_size: int,
+                             no_password: bool,
                              hostname: str,
                              verbose: bool,
                              debug: bool,
@@ -156,15 +169,24 @@ def generate_and_install_key(ctx,
     id_rsa_file = generate_ssh_key_files(key_size=key_size,
                                          user=user,
                                          hostname=hostname,
+                                         no_password=no_password,
                                          exist_ok=True,
                                          verbose=verbose,
                                          debug=debug,)
+    if verbose:
+        ic(id_rsa_file)
+
     add_host_to_ssh_config(hostname=hostname,
                            user=user,
                            verbose=verbose,
                            debug=debug,)
 
     public_keyfile = Path(id_rsa_file.as_posix() + '.pub')
-    sh.ssh_copy_id('-i', public_keyfile.as_posix(), user + '@' + hostname)
-
+    if verbose:
+        ic(public_keyfile)
+    #sh.ssh_copy_id('-i', public_keyfile.as_posix(), user + '@' + hostname)
+    ssh_copy_id_command = ' '.join(['ssh-copy-id', '-i', public_keyfile.as_posix(), user + '@' + hostname])
+    if verbose:
+        ic(ssh_copy_id_command)
+    os.system(ssh_copy_id_command)
 
