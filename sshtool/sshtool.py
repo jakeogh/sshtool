@@ -49,9 +49,8 @@ from asserttool import nevd
 from asserttool import pause
 from asserttool import root_user
 from enumerate_input import enumerate_input
+from pathtool import comment_out_line_in_file
 from replace_text import append_unique_bytes_to_file
-#from pathtool import path_is_block_special
-#from getdents import files
 #from pathtool import write_line_to_file
 from retry_on_exception import retry_on_exception
 
@@ -68,11 +67,6 @@ try:
 except ImportError:
     ic = eprint
     icr = eprint
-
-
-def get_timestamp():
-    timestamp = str("%.22f" % time.time())
-    return timestamp
 
 
 def validate_slice(slice_syntax):
@@ -196,3 +190,35 @@ def generate_and_install_key(ctx,
         ic(ssh_copy_id_command)
     os.system(ssh_copy_id_command)
 
+
+
+@cli.command()
+@click.argument("hostname", type=str, nargs=1)
+@click.option('--verbose', is_flag=True)
+@click.option('--debug', is_flag=True)
+@click.pass_context
+def forget_known_host(ctx,
+                      hostname: str,
+                      verbose: bool,
+                      debug: bool,
+                      ):
+
+    if root_user():
+        pause("\nAre you sure you want to do this as root?\n")
+
+    ctx.ensure_object(dict)
+    null, end, verbose, debug = nevd(ctx=ctx,
+                                     printn=False,
+                                     ipython=False,
+                                     verbose=verbose,
+                                     debug=debug,)
+
+    known_hosts = Path('~/.ssh/known_hosts').expanduser().resolve()
+    if verbose:
+        ic(known_hosts)
+    assert known_hosts.exists()
+    comment_out_line_in_file(path=known_hosts,
+                             line_to_match=hostname + " ",
+                             startswith=True,
+                             verbose=verbose,
+                             debug=debug)
